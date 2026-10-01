@@ -1,0 +1,16 @@
+{
+  "name": "todo-webapp",
+  "type": "web-application",
+  "version": "0.1.0",
+  "language": "TypeScript",
+  "buildpack": "docker",
+  "appPath": "todo-webapp",
+  "entrypoint": "deployment/web-application",
+  "exposure": "internet",
+  "dependencies": [
+    { "kind": "component", "name": "todo-api" }
+  ],
+  "description": "A single-page React app that lists todos, lets the visitor add a new one, toggle a todo's done state, and delete a todo, calling todo-api for all data. Holds no state of its own beyond what it fetches; has no sign-in, no routing beyond the one view, and no todo-editing UI.",
+  "stories": [1, 2, 3, 4],
+  "skillsPinned": ["wireframes", "react-webapp", "oxygen-ui-design-system"]
+}
