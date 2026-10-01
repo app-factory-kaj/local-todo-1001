@@ -1,9 +1,20 @@
-kind: component
-name: todo-api
-wiring:
-  endpoint:
-    component: local-todo-1001-todo-api
-    name: http
-    visibility: project
-    envBindings:
-      address: TODO_API_URL
+apiVersion: openchoreo.dev/v1alpha1
+metadata:
+  name: todo-webapp
+
+endpoints:
+  - name: http
+    type: HTTP
+    port: 9090
+    basePath: /
+    visibility:
+      - project
+      - external
+
+dependencies:
+  endpoints:
+    - component: local-todo-1001-todo-api
+      name: http
+      visibility: project
+      envBindings:
+        address: TODO_API_URL
