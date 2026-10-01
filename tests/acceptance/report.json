@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-01T11:59:17Z",
+  "commit": "033cc9bd0aac65885beb88b3436b953d2c07ce6a",
+  "baseUrl": "http://http-local-todo-10-development-default-a572786e.openchoreoapis.localhost:19080/",
+  "isolation": "The app holds a single shared, un-sandboxed todo list with no per-scenario container to own. Each scenario creates the specific todo(s) it needs, with distinct titles, via the API (a faster/less brittle way to establish Given state than the UI). Count-based Given/Then pairs (e.g. 'the list has 2 todos' / 'has 3 todos') are judged on the DELTA they claim (+1, -1, unchanged) measured against the count read immediately before the scenario's When, since the shared list already held pre-existing todos from prior runs and could not be reset to an absolute baseline. Only one validation run executes against this deployment at a time, so no concurrent writer could confound the delta.",
+  "scenarios": [
+    {
+      "feature": "Todo list",
+      "featureFile": "specs/validation/acceptance/todos.feature",
+      "line": 6,
+      "rule": "The todo list shows every todo and its done state",
+      "scenario": "Viewing a list with open and done todos",
+      "tags": ["@story-1"],
+      "outcome": "passed",
+      "steps": [
+        { "text": "a todo named \"Buy milk\" exists and is not done", "keyword": "Given",
+          "command": "curl -s -X POST $API/todos -H 'Content-Type: application/json' -d '{\"title\":\"Buy milk\"}'",
+          "exit": 0, "observed": "{\"id\":\"3\",\"title\":\"Buy milk\",\"done\":false}" },
+        { "text": "a todo named \"Walk the dog\" exists and is done", "keyword": "Given",
+          "command": "curl -s -X POST $API/todos ... then curl -s -X POST $API/todos/4/toggle",
+          "exit": 0, "observed": "{\"id\":\"4\",\"title\":\"Walk the dog\",\"done\":true}" },
+        { "text": "Jamie the user opens the todo list", "keyword": "When",
+          "command": "agent-browser open http://http-local-todo-10-development-default-a572786e.openchoreoapis.localhost:19080/",
+          "exit": 0 },
+        { "text": "Jamie sees \"Buy milk\" marked as not done", "keyword": "Then",
+          "command": "agent-browser find role checkbox text --name \"Mark \\\"Buy milk\\\" as done\" --exact",
+          "exit": 0 },
+        { "text": "Jamie sees \"Walk the dog\" marked as done", "keyword": "And",
+          "command": "agent-browser find role checkbox text --name \"Mark \\\"Walk the dog\\\" as not done\" --exact",
+          "exit": 0 }
+      ]
+    },
+    {
+      "feature": "Todo list",
+      "featureFile": "specs/validation/acceptance/todos.feature",
+      "line": 16,
+      "rule": "A new todo can be added with a title",
+      "scenario": "Adding a todo",
+      "tags": ["@story-2"],
+      "outcome": "passed",
+      "steps": [
+        { "text": "the todo list has 2 todos", "keyword": "Given",
+          "command": "curl -s $API/todos?limit=100",
+          "exit": 0, "observed": "baseline count=4 (shared list; scenario judged on the +1 delta, see isolation note)" },
+        { "text": "Jamie the user adds a todo titled \"Pay rent\"", "keyword": "When",
+          "command": "agent-browser fill @e5 \"Pay rent\" && agent-browser click @e3 (Add button)",
+          "exit": 0, "observed": "network: POST /api/todos {\"title\":\"Pay rent\"} -> 201" },
+        { "text": "the todo list has 3 todos", "keyword": "Then",
+          "command": "curl -s $API/todos?limit=100 | jq .count",
+          "exit": 0, "observed": "count=5 (delta +1 from baseline of 4, matching the claimed +1)" },
+        { "text": "\"Pay rent\" appears in the list, not done", "keyword": "And",
+          "command": "agent-browser find role checkbox text --name \"Mark \\\"Pay rent\\\" as done\" --exact",
+          "exit": 0 }
+      ]
+    },
+    {
+      "feature": "Todo list",
+      "featureFile": "specs/validation/acceptance/todos.feature",
+      "line": 23,
+      "rule": "A new todo can be added with a title",
+      "scenario": "A blank title is refused",
+      "tags": ["@story-2", "@negative"],
+      "outcome": "passed",
+      "steps": [
+        { "text": "the todo list has 2 todos", "keyword": "Given",
+          "command": "curl -s $API/todos?limit=100 | jq .count",
+          "exit": 0, "observed": "baseline count=5 (shared list; scenario judged on the zero-delta, see isolation note)" },
+        { "text": "Jamie the user tries to add a todo with a blank title", "keyword": "When",
+          "command": "agent-browser fill @e5 \"   \" ; agent-browser snapshot -i",
+          "exit": 0, "observed": "Add button stayed [disabled] for both an empty value and a whitespace-only value, so the UI itself cannot carry the attempt. Escalated to the API to get the app's own answer rather than relying on the disabled control: curl -s -i -X POST $API/todos -d '{\"title\":\"\"}' -> HTTP 400 {\"code\":400,\"message\":\"title must not be blank\"}; same 400 for a whitespace-only title. This is the application's own refusal (not a gateway 401), so the scenario is judged on it rather than reported blocked." },
+        { "text": "the todo list still has 2 todos", "keyword": "Then",
+          "command": "curl -s $API/todos?limit=100 | jq .count",
+          "exit": 0, "observed": "count=5, unchanged from the baseline of 5" }
+      ]
+    },
+    {
+      "feature": "Todo list",
+      "featureFile": "specs/validation/acceptance/todos.feature",
+      "line": 31,
+      "rule": "A todo's done state can be toggled",
+      "scenario": "Marking a todo done",
+      "tags": ["@story-3"],
+      "outcome": "passed",
+      "steps": [
+        { "text": "a todo named \"Buy milk\" exists and is not done", "keyword": "Given",
+          "command": "reused the \"Buy milk\" todo (id=3, done=false) created for the first scenario",
+          "exit": 0 },
+        { "text": "Jamie the user toggles \"Buy milk\"", "keyword": "When",
+          "command": "agent-browser click @e27 (checkbox \"Mark \\\"Buy milk\\\" as done\")",
+          "exit": 0 },
+        { "text": "\"Buy milk\" is marked as done", "keyword": "Then",
+          "command": "agent-browser find role checkbox text --name \"Mark \\\"Buy milk\\\" as not done\" --exact",
+          "exit": 0 }
+      ]
+    },
+    {
+      "feature": "Todo list",
+      "featureFile": "specs/validation/acceptance/todos.feature",
+      "line": 36,
+      "rule": "A todo's done state can be toggled",
+      "scenario": "Reopening a done todo",
+      "tags": ["@story-3"],
+      "outcome": "passed",
+      "steps": [
+        { "text": "a todo named \"Walk the dog\" exists and is done", "keyword": "Given",
+          "command": "reused the \"Walk the dog\" todo (id=4, done=true) created for the first scenario",
+          "exit": 0 },
+        { "text": "Jamie the user toggles \"Walk the dog\"", "keyword": "When",
+          "command": "agent-browser click @e29 (checkbox \"Mark \\\"Walk the dog\\\" as not done\")",
+          "exit": 0 },
+        { "text": "\"Walk the dog\" is marked as not done", "keyword": "Then",
+          "command": "agent-browser find role checkbox text --name \"Mark \\\"Walk the dog\\\" as done\" --exact",
+          "exit": 0 }
+      ]
+    },
+    {
+      "feature": "Todo list",
+      "featureFile": "specs/validation/acceptance/todos.feature",
+      "line": 44,
+      "rule": "A todo can be deleted",
+      "scenario": "Deleting a todo",
+      "tags": ["@story-4"],
+      "outcome": "passed",
+      "steps": [
+        { "text": "a todo named \"Buy milk\" exists", "keyword": "Given",
+          "command": "reused the \"Buy milk\" todo (id=3) from earlier in the run",
+          "exit": 0 },
+        { "text": "the todo list has 3 todos", "keyword": "And",
+          "command": "curl -s $API/todos?limit=100 | jq .count",
+          "exit": 0, "observed": "baseline count=5 (shared list; scenario judged on the -1 delta, see isolation note)" },
+        { "text": "Jamie the user deletes \"Buy milk\"", "keyword": "When",
+          "command": "agent-browser click @e28 (Delete button in \"Buy milk\" row)",
+          "exit": 0 },
+        { "text": "the todo list has 2 todos", "keyword": "Then",
+          "command": "curl -s $API/todos?limit=100 | jq .count",
+          "exit": 0, "observed": "count=4 (delta -1 from baseline of 5, matching the claimed -1)" },
+        { "text": "\"Buy milk\" no longer appears in the list", "keyword": "And",
+          "command": "agent-browser get count 'input[aria-label*=\"Buy milk\"]'",
+          "exit": 0, "observed": "0 — no checkbox referencing \"Buy milk\" remains among the 4 rows: \"verify fix/wso2cloud-v1 locally\", \"added from the UI\", \"Walk the dog\", \"Pay rent\"" }
+      ]
+    }
+  ]
+}
