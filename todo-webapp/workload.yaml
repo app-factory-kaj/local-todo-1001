@@ -1,0 +1,9 @@
+kind: component
+name: todo-api
+wiring:
+  endpoint:
+    component: local-todo-1001-todo-api
+    name: http
+    visibility: project
+    envBindings:
+      address: TODO_API_URL
